@@ -45,7 +45,7 @@ class Instafeed
       file.read
     else
       yield.tap do |result|
-        file.write result
+        File.open(file, 'w') { |file| file.write result }
       end
     end
   end
