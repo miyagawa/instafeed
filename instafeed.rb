@@ -35,6 +35,8 @@ class Instafeed
     end
 
     JSON.parse(res)["html"]
+  rescue
+    ""
   end
 
   def cached(key)
