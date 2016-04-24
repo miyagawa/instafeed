@@ -23,7 +23,7 @@ class Instafeed
       node.content = article["html"]
       link.add_next_sibling node
 
-      author_node = Nokogiri::XML::Node.new "dc:author", doc
+      author_node = Nokogiri::XML::Node.new "dc:creator", doc
       author_node.content = article["author"]
       link.add_next_sibling author_node
     end
