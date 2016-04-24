@@ -15,11 +15,17 @@ class Instafeed
   def run
     doc = Nokogiri::XML(open(url))
     doc.root.add_namespace "content", "http://purl.org/rss/1.0/modules/content/"
+    doc.root.add_namespace "dc", "http://purl.org/dc/elements/1.1/"
     doc.xpath('//item/link').each do |link|
-      body = parse link.text
+      article = parse link.text
+
       node = Nokogiri::XML::Node.new "content:encoded", doc
-      node.content = body
+      node.content = article["html"]
       link.add_next_sibling node
+
+      author_node = Nokogiri::XML::Node.new "dc:author", doc
+      author_node.content = article["author"]
+      link.add_next_sibling author_node
     end
     puts doc.to_xml
   end
@@ -34,7 +40,7 @@ class Instafeed
       open(api).read
     end
 
-    JSON.parse(res)["html"]
+    JSON.parse(res)
   rescue
     ""
   end
