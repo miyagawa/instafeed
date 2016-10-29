@@ -25,7 +25,7 @@ class Instafeed
 
       author_node = Nokogiri::XML::Node.new "dc:creator", doc
       author_node.content = article["provider_name"]
-      author_node.content += " - #{article["authors"][0]["name"]}" if article["authors"]
+      author_node.content += " - #{article["authors"][0]["name"]}" if article["authors"].size > 0
       link.add_next_sibling author_node
     end
     puts doc.to_xml
