@@ -20,12 +20,12 @@ class Instafeed
       article = parse link.text
 
       node = Nokogiri::XML::Node.new "content:encoded", doc
-      node.content = article["html"]
+      node.content = article["content"]
       link.add_next_sibling node
 
       author_node = Nokogiri::XML::Node.new "dc:creator", doc
-      author_node.content = article["site_name"]
-      author_node.content += " - #{article["author"]}" if article["author"]
+      author_node.content = article["provider_name"]
+      author_node.content += " - #{article["authors"][0]["name"]}" if article["authors"]
       link.add_next_sibling author_node
     end
     puts doc.to_xml
@@ -36,8 +36,8 @@ class Instafeed
     res = cached(key) do
       sleep 1
       warn "Parsing #{url}"
-      api = URI.parse 'https://www.instaparser.com/api/1/article'
-      api.query = URI.encode_www_form("api_key" => ENV["INSTAPARSER_TOKEN"], "url" => url)
+      api = URI.parse 'https://api.embedly.com/1/extract'
+      api.query = URI.encode_www_form("key" => ENV["EMBEDLY_KEY"], "url" => url)
       open(api).read
     end
 
