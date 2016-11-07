@@ -1,9 +1,11 @@
 #!/usr/bin/env ruby
 require 'nokogiri'
 require 'open-uri'
+require 'open_uri_redirections'
 require 'digest'
 require 'pathname'
 require 'json'
+require 'readability'
 
 class Instafeed
   attr_accessor :url
@@ -19,31 +21,49 @@ class Instafeed
     doc.xpath('//item/link').each do |link|
       article = parse link.text
 
-      node = Nokogiri::XML::Node.new "content:encoded", doc
-      node.content = article["content"]
-      link.add_next_sibling node
+      if article["content"]
+        node = Nokogiri::XML::Node.new "content:encoded", doc
+        node.content = article["content"]
+        link.add_next_sibling node
+      end
 
-      author_node = Nokogiri::XML::Node.new "dc:creator", doc
-      author_node.content = article["provider_name"]
-      author_node.content += " - #{article["authors"][0]["name"]}" if article["authors"].size > 0
-      link.add_next_sibling author_node
+      if article["provider_name"]
+        author_node = Nokogiri::XML::Node.new "dc:creator", doc
+        author_node.content = article["provider_name"]
+        author_node.content += " - #{article["authors"][0]["name"]}" if article["authors"].size > 0
+        link.add_next_sibling author_node
+      end
     end
+
     puts doc.to_xml
   end
 
   def parse(url)
     key = Digest::SHA1.hexdigest url
     res = cached(key) do
-      sleep 1
       warn "Parsing #{url}"
+
       api = URI.parse 'https://api.embedly.com/1/extract'
       api.query = URI.encode_www_form("key" => ENV["EMBEDLY_KEY"], "url" => url)
-      open(api).read
+      article = JSON.parse(open(api).read)
+
+      unless article["content"]
+        source = open(url, allow_redirections: :safe).read
+        article["content"] = Readability::Document.new(
+          source,
+          tags: %w[div p a img i strong em ul li pre blockquote code h1 h2 h3 h4],
+          attributes: %w[href src],
+          remove_empty_nodes: true,
+        ).content
+      end
+
+      JSON.dump(article)
     end
 
     JSON.parse(res)
-  rescue
-    ""
+  rescue Exception => e
+    warn e
+    {}
   end
 
   def cached(key)
