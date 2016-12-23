@@ -26,13 +26,6 @@ class Instafeed
         node.content = article["content"]
         link.add_next_sibling node
       end
-
-      if article["provider_name"]
-        author_node = Nokogiri::XML::Node.new "dc:creator", doc
-        author_node.content = article["provider_name"]
-        author_node.content += " - #{article["authors"][0]["name"]}" if article["authors"].size > 0
-        link.add_next_sibling author_node
-      end
     end
 
     puts doc.to_xml
@@ -43,9 +36,9 @@ class Instafeed
     res = cached(key) do
       warn "Parsing #{url}"
 
-      api = URI.parse 'https://api.embedly.com/1/extract'
-      api.query = URI.encode_www_form("key" => ENV["EMBEDLY_KEY"], "url" => url)
-      article = JSON.parse(open(api).read)
+      api = URI.parse 'https://mercury.postlight.com/parser'
+      api.query = URI.encode_www_form("url" => url)
+      article = JSON.parse(open(api, "x-api-key" => ENV['MERCURY_API_KEY']).read)
 
       unless article["content"]
         source = open(url, allow_redirections: :safe).read
